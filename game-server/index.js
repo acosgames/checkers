@@ -1,11 +1,11 @@
 import cup from './acosg';
-import tictactoe from './game';
+import checkers from './game';
 
 
-cup.on('gamestart', (action) => tictactoe.onNewGame(action));
-cup.on('skip', (action) => tictactoe.onSkip(action));
-cup.on('join', (action) => tictactoe.onJoin(action));
-cup.on('leave', (action) => tictactoe.onLeave(action));
-cup.on('pick', (action) => tictactoe.onPick(action));
+cup.on('gamestart', (action) => checkers.onNewGame(action));
+cup.on('skip', (action) => checkers.onSkip(action));
+cup.on('join', (action) => checkers.onJoin(action));
+cup.on('leave', (action) => checkers.onLeave(action));
+cup.on('move', (action) => checkers.onMove(action));
 
 cup.submit();

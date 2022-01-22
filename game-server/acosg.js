@@ -88,6 +88,7 @@ class ACOSG {
 
     ignore() {
         globals.ignore();
+        return false;
     }
 
     setGame(game) {
@@ -181,7 +182,7 @@ class ACOSG {
         seconds = seconds || this.defaultSeconds;
         if (!this.nextGame.timer)
             this.nextGame.timer = {};
-        this.nextGame.timer.set = Math.min(60, Math.max(10, seconds));
+        this.nextGame.timer.set = Math.min(10000, Math.max(10, seconds));
     }
 
     reachedTimelimit(action) {

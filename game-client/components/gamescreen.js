@@ -3,18 +3,9 @@ import React, { Component } from 'react';
 import fs from 'flatstore';
 
 import AlertPanel from './alertpanel';
-import Cell from './cell';
+import Cell from './Cell';
 import PlayerList from './playerlist';
-import Line from './line';
 
-// import book1 from '../images/book1.jpg';
-// import book2 from '../images/book2.jpg';
-// import book3 from '../images/book3.jpg';
-// import book4 from '../images/book4.jpg';
-// import book5 from '../images/book5.jpg';
-// import book6 from '../images/book6.jpg';
-// import book7 from '../images/book7.jpg';
-// import test from '../images/test.mp3';
 
 class Gamescreen extends Component {
     constructor(props) {
@@ -34,6 +25,16 @@ class Gamescreen extends Component {
         fs.set('gamearea', rect);
     }
 
+    renderCheckerGrid() {
+        let elems = [];
+        for (var x = 0; x < 8; x++) {
+            for (var y = 0; y < 8; y++) {
+                elems.push(<Cell x={x} y={y} />)
+            }
+        }
+        return elems;
+    }
+
     render() {
         return (
             <div className="gamewrapper" ref={el => {
@@ -45,46 +46,13 @@ class Gamescreen extends Component {
                     <div className="vstack-noh" >
                         <div className="vstack">
                             <PlayerList />
-
                         </div>
-
                         <AlertPanel />
                     </div>
                     <div className="gamescreen" >
-                        <Line className={'foreground'} />
-                        {/* <Line className={'foreground'} />
-                        <Line className={'background'} />
-                        <Line className={'background'} /> */}
-                        <Line className={'background'} />
-                        <div className="gamearea">
-                            <div className="vstack">
-                                <div className="hstack">
-                                    <Cell id={0} /><div className="vertical" /><Cell id={1} /><div className="vertical" /><Cell id={2} />
-                                </div>
-                                <div className="horizontal" />
-                                <div className="hstack">
-                                    <Cell id={3} /><div className="vertical" /><Cell id={4} /><div className="vertical" /><Cell id={5} />
-                                </div>
-                                <div className="horizontal" />
-                                <div className="hstack">
-                                    <Cell id={6} /><div className="vertical" /><Cell id={7} /><div className="vertical" /><Cell id={8} />
-                                </div>
-                            </div>
-
+                        <div className="checkers-grid">
+                            {this.renderCheckerGrid()}
                         </div>
-
-                        {/* <audio controls >
-                    <source src={test} />
-                </audio>
-                <img src={book1} />
-                <img src={book2} />
-                <img src={book3} />
-                <img src={book4} />
-                <img src={book5} />
-                <img src={book6} />
-                <img src={book7} /> */}
-
-
                     </div>
                 </div>
             </div>
