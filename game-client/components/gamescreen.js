@@ -68,7 +68,7 @@ function TopPlayer(props) {
         </div>
     )
 }
-TopPlayer = fs.connect(['next'])(TopPlayer);
+TopPlayer = fs.connect(['next', 'events-gameover'])(TopPlayer);
 
 
 function BottomPlayer(props) {
@@ -104,7 +104,7 @@ function BottomPlayer(props) {
         </div>
     )
 }
-BottomPlayer = fs.connect(['next'])(BottomPlayer);
+BottomPlayer = fs.connect(['next', 'events-gameover'])(BottomPlayer);
 
 
 function IsChainUpdate(props) {
