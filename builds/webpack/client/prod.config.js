@@ -9,7 +9,7 @@ var OUTPUT_PATH = '../../../builds/client';
 
 module.exports = {
     mode: 'production',
-    devtool: false,//'inline-source-map',
+    devtool: 'source-map',//'inline-source-map',
     // optimizations: {
     //     usedExports: true,
     // },

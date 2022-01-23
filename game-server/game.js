@@ -3,6 +3,16 @@ import cup from './acosg';
 let defaultGame = {
     state: {
         board: [
+            // [0, 2, 0, 2, 0, 2, 0, 2],
+            // [0, 0, 2, 0, 2, 0, 2, 0],
+            // [0, 2, 0, 2, 0, 0, 0, 2],
+            // [2, 0, 0, 0, 1, 0, 2, 0],
+            // [0, 0, 0, 0, 0, 1, 0, 0],
+            // [1, 0, 1, 0, 0, 0, 1, 0],
+            // [0, 1, 0, 1, 0, 1, 0, 1],
+            // [1, 0, 0, 0, 1, 0, 1, 0]
+            // [0, 0, 0, 2, 0, 2, 0, 0], [2, 0, 0, 0, 2, 0, 2, 0], [0, 2, 0, 2, 0, 2, 0, 2], [2, 0, 0, 0, 0, 0, 2, 0], [0, 1, 0, 1, 0, 1, 0, 1], [0, 0, 0, 0, 0, 0, 4, 0], [0, 1, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0]
+
             [0, 2, 0, 2, 0, 2, 0, 2], //white
             [2, 0, 2, 0, 2, 0, 2, 0],
             [0, 2, 0, 2, 0, 2, 0, 2],
@@ -56,16 +66,13 @@ class Checkers {
 
     playerLeave(id) {
         let players = cup.players();
-        let otherPlayerId = null;
-        if (players[id]) {
-            otherPlayerId = this.selectNextPlayer(id);
-            //delete players[id];
-        }
+        let player = players[id];
 
-        if (otherPlayerId) {
-            let otherPlayer = players[otherPlayerId];
-            this.setWinner(otherPlayer.type, 'forfeit')
-        }
+        let otherType = this.getOppositeType(player.type);
+        let otherId = this.getPlayerIdFromType(otherType);
+
+        this.setWinner(otherId, 'forfeit')
+
     }
 
     onMove(action) {
@@ -78,18 +85,46 @@ class Checkers {
         let dir = action.payload.dir;
         let kill;
 
-        if (!this.processsValidMove(action.user.id, user, from, dir)) {
+        let x = from[0];
+        let y = from[1];
+        let next = cup.next();
+
+        //if the previous move is part of a chain,
+        // force the user to play one of the moves
+        if (next.pos) {
+            let rx = next.pos[0];
+            let ry = next.pos[1];
+
+            if (rx != x && ry != y) {
+                cup.ignore();
+                return false;
+            }
+
+            let isValidDirection = false;
+            if (Array.isArray(next.dirs))
+                for (var i = 0; i < next.dirs.length; i++) {
+                    if (dir == next.dirs[i])
+                        isValidDirection = true;
+                }
+
+            if (!isValidDirection) {
+                cup.ignore();
+                return false;
+            }
+        }
+
+        if (!this.processValidMove(action.user.id, user, from, dir)) {
             cup.ignore();
             return false;
         }
 
         if (user.score >= 12) {
-            this.setWinner(user);
+            this.setWinner(action.user.id, 'winner');
             return true;
         }
 
-        cup.setTimelimit(10000);
-        this.selectNextPlayer(action.user.id);
+        cup.setTimelimit(30);
+        // this.selectNextPlayer(action.user.id);
         cup.event('move', {
             id, from, dir
         });
@@ -116,7 +151,7 @@ class Checkers {
      * @param {[x,y]} from 
      * @param {[x,y]} to 
      */
-    processsValidMove(userid, user, from, dir, isTest) {
+    processValidMove(userid, user, from, dir, isChain) {
 
         let state = cup.state();
 
@@ -124,22 +159,26 @@ class Checkers {
         let y = from[1];
         let cell = this.getCell(x, y)
 
-        if (!this.checkUserOwnsCell(user.type, cell))
+        if (!isChain && !this.checkUserOwnsCell(user.type, cell))
             return false;
 
-        if (!this.checkValidAction(cell, dir))
+        if (isChain && cell != 0)
+            return false;
+
+        if (!isChain && !this.checkValidAction(cell, dir))
+            return false;
+
+        if (isChain && !this.checkValidAction(isChain, dir))
             return false;
 
         let cellTo = this.actionToCell(from[0], from[1], dir);
         if (cellTo == null)
-            //invalid move
+            //invalid move 
             return false;
 
+        let to = this.actionToCoords(from[0], from[1], dir);
         let otherType = this.getTypeFromCell(cellTo);
-        if (!otherType) {
-
-            let to = this.actionToCoords(from[0], from[1], dir);
-
+        if (!otherType && !isChain) {
             //clear out previous cell 
             state.board[x][y] = 0;
 
@@ -147,63 +186,104 @@ class Checkers {
             state.board[to.x][to.y] = cell;
 
             //check if we need to king the cell
-            this.processNewKing(user.type, to);
+            this.processNewKing(to);
+
             //empty cell, allow move
+            this.selectNextPlayer(user.type);
             return true;
         }
 
+        if (!otherType && isChain)
+            return false;
+
+        if (otherType == user.type) {
+            return false;
+        }
+
         //perform action one more time to see if we can jump over
-        let cellFinal = this.actionToCell(from[0], from[1], dir);
+        let cellFinal = this.actionToCell(to.x, to.y, dir);
         let finalType = this.getTypeFromCell(cellFinal);
+
+        cup.log('finalType =  ' + finalType);
 
         if (finalType)
             //the checker item is blocked
             return false;
 
-        if (isTest)
-            return true;
+        const coords = this.actionToCoords(to.x, to.y, dir);
+
+        if (isChain) {
+            if (cellFinal == 0)
+                return dir;
+            return false;
+        }
+
+
+        //run before we change the cells
+        //check all the directions
+        // if another eat is possible, let user go again
+        let hasAnotherMove = false;
+        let requiredMove = [];
+        for (var i = 1; i <= 4; i++) {
+            let attempt = this.processValidMove(userid, user, [coords.x, coords.y], i, cell);
+            if (attempt) {
+                requiredMove.push(attempt);
+                hasAnotherMove = true;
+            }
+        }
+
+        if (requiredMove.length > 0) {
+            cup.next({ id: userid, pos: [coords.x, coords.y], dirs: requiredMove })
+            cup.log("Has Another move: " + userid);
+        }
+
+        //no more moves, let next player go
+        else {
+            this.selectNextPlayer(user.type);
+        }
+
 
         //we successfully ate the opponent
         //set their cell to 0
         //give score point to user
-        let to = this.actionToCoords(from[0], from[1], dir);
-        board[to.x][to.y] = 0;
+
+        //clear the previous location
+        state.board[x][y] = 0;
+
+        //eat the opponent piece
+        state.board[to.x][to.y] = 0;
+
+        //set the cell of final location
+        state.board[coords.x][coords.y] = cell;
+
+        this.processNewKing(coords);
+
+        // cup.log("Start Pos: " + JSON.stringify({ x, y }));
+        // cup.log("Opponent Pos: " + JSON.stringify(to));
+        // cup.log("Final Pos: " + JSON.stringify(coords));
         user.score += 1;
 
-        //check all the directions
-        // if another eat is possible, let user go again
-        let hasAnotherMove = false;
-        for (var i = 1; i <= 4; i++) {
-            if (this.processsValidMove(userid, user, from, i, true)) {
-                hasAnotherMove = true;
-                cup.next({ id: userid })
-                break;
-            }
-        }
+        cup.log("Player Moved: " + JSON.stringify(user));
 
-        //no more moves, let next player go
-        if (!hasAnotherMove) {
-            let otherType = this.getOppositeType(user.type);
-            let otherId = this.getPlayerFromType(otherType);
-            cup.next({ id: otherId });
-        }
 
         //check if we can eat another cell
         return true;
     }
 
-    processNewKing(type, coords) {
+
+
+    processNewKing(coords) {
         let state = cup.state();
         let cell = this.getCell(coords.x, coords.y);
         //B reaches the top of the board
-        if (type == 'B' && cell == 1) {
-            if (coords.y == 0) {
+        if (cell == 1) {
+            if (coords.x == 0) {
                 state.board[coords.x][coords.y] = 3;
             }
         }
         //W reaches bottom of the board
-        else if (type == 'W' && cell == 2) {
-            if (coords.y == 7) {
+        else if (cell == 2) {
+            if (coords.x == 7) {
                 state.board[coords.x][coords.y] = 4;
             }
         }
@@ -226,11 +306,15 @@ class Checkers {
         return true;
     }
 
-    getPlayerFromType(type) {
+    getPlayerIdFromType(type) {
         let players = cup.players();
-        for (var id in players)
-            if (players[id] == type)
-                return players[id];
+        for (var id in players) {
+            let player = players[id];
+            if (player?.type == type)
+                return id;
+        }
+
+
     }
     getTypeFromCell(cell) {
         if (cell == 1 || cell == 3)
@@ -317,37 +401,45 @@ class Checkers {
 
         let state = cup.state();
         //select the starting player
-        if (!state.sx || state.sx.length == 0) {
-            let randomPlayerID = Math.floor(Math.random() * playerList.length);
-            state.sx = this.selectNextPlayer(playerList[randomPlayerID]);
-        }
-        else {
-            state.sx = this.selectNextPlayer(state.sx);
-        }
+
+        let randomPlayerID = Math.floor(Math.random() * playerList.length);
+        state.sx = playerList[randomPlayerID];
+
 
         //set the starting player, and set type for other player
         let players = cup.players();
-        for (var id in players)
-            players[id].type = 'W';
+        for (var id in players) {
+            let player = players[id];
+            player.rank = 2;
+            player.score = 0;
+            player.type = 'W';
+            cup.log(id + ' ' + JSON.stringify(player));
+        }
+
         players[state.sx].type = 'B';
 
+        cup.next({ id: state.sx });
         cup.event('newround', true);
-        cup.setTimelimit(10000);
+        cup.setTimelimit(30);
     }
 
+    findNextPlayer() {
+        let state = cup.state();
+        let next = cup.next();
+        let players = cup.players();
+        let current = players[next.id];
+        let otherType = this.getOppositeType(current.type);
+        let otherId = this.getPlayerIdFromType(otherType);
+        return otherId;
+    }
 
-    selectNextPlayer(userid) {
-        let action = cup.action();
-        let players = cup.playerList();
-        userid = userid || action.user.id;
-
-        //only 2 players so just filter the current player
-        let remaining = players.filter(x => x != userid);
-        cup.next({
-            id: remaining[0],
-            action: 'move'
-        });
-        return remaining[0];
+    selectNextPlayer(type) {
+        cup.log("Current Type: " + type);
+        let otherType = this.getOppositeType(type);
+        cup.log("Other Type: " + otherType);
+        let otherId = this.getPlayerIdFromType(otherType);
+        cup.next({ id: otherId });
+        cup.log("Next PLayer: " + otherId);
     }
 
 
@@ -356,18 +448,20 @@ class Checkers {
         cup.next({});
     }
 
-    // set the winner event and data
-    setWinner(playerid) {
-        //find user who matches the win type
+    // set the winner event and data   
+    setWinner(playerid, type) {
+        //find user who matches the win type  
         let player = cup.players(playerid);
         if (!player) {
             player = {}
             player.id = 'unknown player';
         }
 
+        player.rank = 1;
+
         cup.gameover({
-            type: 'winner',
-            id: player.id
+            type,
+            id: playerid
         });
     }
 }

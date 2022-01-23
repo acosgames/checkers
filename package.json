@@ -27,7 +27,8 @@
     "deploy": "npm run build:client && npm run build:server && node --inspect ./node_modules/acosgames/simulator/deploy.js",
     "deploy:client": "npm run build:client && node --inspect ./node_modules/acosgames/simulator/deploy.js client",
     "deploy:server": "npm run build:server && node --inspect ./node_modules/acosgames/simulator/deploy.js server",
-    "deploy:db": "node --inspect ./node_modules/acosgames/simulator/deploy.js db"
+    "deploy:db": "node --inspect ./node_modules/acosgames/simulator/deploy.js db",
+    "kill:win": "taskkill //im node.exe //F"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",

@@ -33,8 +33,7 @@ function TimeBar(props) {
         //         width: 100 + '%'
         //     };
     }
-    return (<
-        div className="progress"
+    return (<div className="progress"
         style={
             style
         }

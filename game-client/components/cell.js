@@ -1,5 +1,6 @@
 import fs from 'flatstore';
 import { send } from '../acosg';
+import { useEffect } from 'react';
 
 function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -84,19 +85,19 @@ function Cell(props) {
      * 3. Check jump over opponent into empty spot
      * 4. Check lands on touchdown
      * 
-     * Left Up Diagonal
+     * Dir=1 -- Left Up Diagonal
      * x=(x-1); y=(y-1);
-     * Right Up Diagonal
-     * x=(x+1); y=(y-1);
-     * Left Down Diagonal
+     * Dir=2 -- Right Up Diagonal
      * x=(x-1); y=(y+1);
-     * Right Down Diagonal
+     * Dir=3 -- Left Down Diagonal
+     * x=(x+1); y=(y-1);
+     * Dir=4 -- Right Down Diagonal
      * x=(x+1); y=(y+1);
      * 
      * @param {[x,y]} from 
      * @param {[x,y]} to 
      */
-    const processsValidMove = (x, y, dir) => {
+    const processsValidMove = (x, y, dir, isTest) => {
 
         let user = fs.get('local');
         let players = fs.get('players');
@@ -104,10 +105,18 @@ function Cell(props) {
 
         let cell = getCell(x, y)
 
-        if (!checkUserOwnsCell(user.type, cell))
+        //normal run we can only move our own piece
+        if (!isTest && !checkUserOwnsCell(user.type, cell))
             return false;
 
-        if (!checkValidAction(cell, dir))
+        //testing a chain jump must have empty cell
+        if (isTest && cell != 0)
+            return false;
+
+        if (!isTest && !checkValidAction(cell, dir))
+            return false;
+
+        if (isTest && !checkValidAction(isTest, dir))
             return false;
 
         let cellTo = actionToCell(x, y, dir);
@@ -115,16 +124,23 @@ function Cell(props) {
             //invalid move
             return false;
 
+        const coords = actionToCoords(x, y, dir);
         let otherType = getTypeFromCell(cellTo);
         if (!otherType) {
-            //empty cell, allow move
-            const coords = actionToCoords(x, y, dir);
-            return coords;
+            if (!isTest)
+                //empty cell, allow move
+                return [coords];
+
+            return false;
 
         }
 
+        if (otherType == user.type)
+            return false;
+
         //perform action one more time to see if we can jump over opponent piece
-        let cellFinal = actionToCell(x, y, dir);
+
+        let cellFinal = actionToCell(coords.x, coords.y, dir);
         let finalType = getTypeFromCell(cellFinal);
 
         if (finalType)
@@ -134,10 +150,25 @@ function Cell(props) {
 
         //we can successfully eat the opponent
         //get coords to highlight those cells
-        const to = actionToCoords(x, y, dir);
+        const to = actionToCoords(coords.x, coords.y, dir);
+
+        let results = [to];
+
+        if (isTest)
+            return results;
+
+        for (var i = 1; i <= 4; i++) {
+            let attempt = processsValidMove(to.x, to.y, i, cell);
+            if (attempt) {
+                for (var a = 0; a < attempt.length; a++) {
+                    results.push(attempt[a]);
+                }
+            }
+        }
+
 
         //check if we can eat another cell
-        return to;
+        return results;
     }
 
 
@@ -219,7 +250,7 @@ function Cell(props) {
     const classHighlighted = isHighlighted ? 'highlight' : '';
 
     //on first click, select the cell (only if user owns it)
-    const onCellClick = () => {
+    const onCellClick = (isSimulate) => {
 
         if (isSelected) {
             return;
@@ -227,7 +258,8 @@ function Cell(props) {
 
         if (isHighlighted) {
             let selected = fs.get('selected');
-            send('move', { from: [selected.x, selected.y], dir: isHighlighted.dir })
+            if (selected && !isSimulate)
+                send('move', { from: [selected.x, selected.y], dir: isHighlighted.dir })
             fs.set('highlight', []);
             fs.set('selected', null);
             return;
@@ -235,10 +267,10 @@ function Cell(props) {
 
         let local = fs.get('local');
         let cell = getCell(x, y);
-        if (local.type == 'B' && cell == 1 || cell == 3) {
+        if (local.type == 'B' && (cell == 1 || cell == 3)) {
             fs.set('selected', { x, y });
         }
-        else if (local.type == 'W' && cell == 2 || cell == 4) {
+        else if (local.type == 'W' && (cell == 2 || cell == 4)) {
             fs.set('selected', { x, y });
         }
         else {
@@ -249,22 +281,43 @@ function Cell(props) {
         let highlight = [];
         for (var i = 1; i <= 4; i++) {
             let attempt = processsValidMove(x, y, i);
-            if (attempt)
-                highlight.push(attempt);
+            if (attempt) {
+                for (var a = 0; a < attempt.length; a++)
+                    highlight.push(attempt[a]);
+            }
+
         }
 
         fs.set('highlight', highlight);
-
-
-
     }
 
-    // let choices = [1, 2, 3, 4];
-    // cell = choices[getRandomInt(0, 3)];
+    useEffect(() => {
+
+        //check if user is forced into doing a chain move
+        //if they are, highlight the items for them
+        let next = fs.get('next');
+        if (next.pos) {
+
+            if (x == next.pos[0] && y == next.pos[1]) {
+                onCellClick(true);
+            }
+        }
+    })
+
+    let isKing = (cell == 3 || cell == 4);
+    let checkerType = isKing ? 'K' : '';
+    let classCheckerType = isKing ? 'king' : 'normie';
+
+    const user = fs.get('local');
+    let shouldRotate = user.type == 'W';
+    let classRotate = shouldRotate ? 'shouldRotate' : '';
+
+    // let choices = [1, 2, 3, 4]; 
+    // cell = choices[getRandomInt(0, 3)]; 
     return (
-        <div className={"cell " + squareType} onClick={onCellClick}>
-            <div className={'type-' + cell}>
-                {x + ',' + y}
+        <div className={"cell " + squareType} onClick={() => { onCellClick() }}>
+            <div className={'type-' + cell + ' ' + classCheckerType + ' ' + classRotate} >
+                <span></span>
             </div>
             <div className={classHighlighted + ' ' + classSelected}></div>
         </div>

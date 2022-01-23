@@ -1,10 +1,122 @@
 
-import React, { Component } from 'react';
+import React, { Component, useEffect } from 'react';
 import fs from 'flatstore';
-
-import AlertPanel from './alertpanel';
 import Cell from './Cell';
-import PlayerList from './playerlist';
+import Timebar from './timebar';
+
+
+function findOtherPlayer(localId) {
+    let players = fs.get('players');
+    for (var id in players) {
+        let player = players[id];
+        if (id != localId)
+            return { id, player };
+    }
+    return { id: null, player: null };
+}
+
+function Timeleft(props) {
+    let timeleft = props.timeleft;
+    try {
+        if (typeof timeleft != 'number')
+            timeleft = Number.parseInt(timeleft);
+
+        timeleft = Math.ceil(timeleft / 1000);
+    }
+    catch (e) {
+        timeleft = 0;
+    }
+    return (<>{timeleft}</>)
+}
+Timeleft = fs.connect(['timeleft'])(Timeleft);
+
+function TopPlayer(props) {
+    let local = fs.get('local');
+    let next = fs.get('next');
+    let events = fs.get('events');
+    let gameover = events?.gameover;
+    let isWinner = gameover?.id == local.id;
+
+    let other = findOtherPlayer(local.id);
+    let player = other?.player;
+    let id = other?.id + '';
+    let isNext = (next?.id == id || isWinner);
+    let classNext = isNext ? 'next' : '';
+
+    let score = player?.score || 0;
+    if (score > 0) {
+        score = '+' + score;
+    }
+    else {
+        score = '';
+    }
+
+
+    return (
+        <div className={"hstack " + classNext + ' type-' + player?.type}>
+            <div className={"ztop hstack " + classNext + ' type-' + player?.type}>
+
+                <div className={'marker'}>{isNext ? '⇨' : ''}</div>
+                <div className="timer"><Timeleft /></div>
+                <div className="player">{player?.name}</div>
+                <div className="eaten">{score}</div>
+
+            </div>
+            <Timebar />
+        </div>
+    )
+}
+TopPlayer = fs.connect(['next'])(TopPlayer);
+
+
+function BottomPlayer(props) {
+
+    let local = fs.get('local');
+    let next = fs.get('next');
+
+    let events = fs.get('events');
+    let gameover = events?.gameover;
+    let isWinner = gameover?.id == local.id;
+
+    let isNext = (next.id == local.id) || isWinner;
+    let classNext = isNext ? 'next' : '';
+
+    let score = local?.score || 0;
+    if (score > 0) {
+        score = '+' + score;
+    }
+    else {
+        score = '';
+    }
+    if (isWinner)
+        score = 'WINNER';
+    return (
+        <div className={"hstack " + classNext + ' type-' + local?.type}>
+            <div className={"ztop hstack " + classNext + ' type-' + local?.type}>
+                <div className={'marker'}>{isNext ? '⇨' : ''}</div>
+                <div className="timer"><Timeleft /></div>
+                <div className="player">{local.name}</div>
+                <div className="eaten">{score}</div>
+            </div>
+            <Timebar />
+        </div>
+    )
+}
+BottomPlayer = fs.connect(['next'])(BottomPlayer);
+
+
+function IsChainUpdate(props) {
+    useEffect(() => {
+        let local = fs.get('local');
+        let next = fs.get('next');
+        if (next.id != local.id)
+            return;
+        fs.set('highlight', []);
+        fs.set('selected', null);
+    })
+    return <></>
+}
+IsChainUpdate = fs.connect(['next-pos'])(IsChainUpdate);
 
 
 class Gamescreen extends Component {
@@ -12,6 +124,8 @@ class Gamescreen extends Component {
         super(props);
         this.ref = null;
     }
+
+
 
     updatePosition() {
         if (!this.ref)
@@ -29,31 +143,32 @@ class Gamescreen extends Component {
         let elems = [];
         for (var x = 0; x < 8; x++) {
             for (var y = 0; y < 8; y++) {
-                elems.push(<Cell x={x} y={y} />)
+                elems.push(<Cell key={x + ',' + y} x={x} y={y} />)
             }
         }
         return elems;
     }
 
     render() {
+
+        let local = fs.get('local');
+        let shouldRotate = local.type == 'W';
+        let classRotate = shouldRotate ? 'shouldRotate' : '';
         return (
             <div className="gamewrapper" ref={el => {
                 if (!el) return;
                 this.ref = el;
                 setTimeout(this.updatePosition.bind(this), 2000);
             }}>
+                <IsChainUpdate />
                 <div className="vstack">
-                    <div className="vstack-noh" >
-                        <div className="vstack">
-                            <PlayerList />
-                        </div>
-                        <AlertPanel />
-                    </div>
+                    <TopPlayer />
                     <div className="gamescreen" >
-                        <div className="checkers-grid">
+                        <div className={"checkers-grid " + classRotate}>
                             {this.renderCheckerGrid()}
                         </div>
                     </div>
+                    <BottomPlayer />
                 </div>
             </div>
         )
@@ -61,4 +176,4 @@ class Gamescreen extends Component {
 
 }
 
-export default Gamescreen;
+export default fs.connect(['local'])(Gamescreen);
