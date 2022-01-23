@@ -307,6 +307,7 @@ body,
   top: 0;
   left: 0;
   z-index: 1;
+  transition: left 0.1s ease-in;
 }
 .next.type-B .progress {
   background-color: #0f56cf;

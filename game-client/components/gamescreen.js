@@ -35,11 +35,12 @@ function TopPlayer(props) {
     let next = fs.get('next');
     let events = fs.get('events');
     let gameover = events?.gameover;
-    let isWinner = gameover?.id == local.id;
+
 
     let other = findOtherPlayer(local.id);
     let player = other?.player;
     let id = other?.id + '';
+    let isWinner = gameover?.id == id;
     let isNext = (next?.id == id || isWinner);
     let classNext = isNext ? 'next' : '';
 
@@ -50,7 +51,8 @@ function TopPlayer(props) {
     else {
         score = '';
     }
-
+    if (isWinner)
+        score = 'WINNER';
 
     return (
         <div className={"hstack " + classNext + ' type-' + player?.type}>
