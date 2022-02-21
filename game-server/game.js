@@ -123,11 +123,11 @@ class Checkers {
             return true;
         }
 
-        cup.setTimelimit(30);
+        cup.setTimelimit(3000);
         // this.selectNextPlayer(action.user.id);
-        cup.event('move', {
-            id, from, dir
-        });
+        // cup.event('move', {
+        //     id, from, dir
+        // });
     }
 
 
@@ -210,7 +210,7 @@ class Checkers {
             //the checker item is blocked
             return false;
 
-        const coords = this.actionToCoords(to.x, to.y, dir);
+        let coords = this.actionToCoords(to.x, to.y, dir);
 
         if (isChain) {
             if (cellFinal == 0)
@@ -342,7 +342,7 @@ class Checkers {
         return true;
     }
 
-    getCell(x, y) {
+    getCell = (x, y) => {
         let state = cup.state();
         if (x < 0 || x >= 8 || y < 0 || y >= 8)
             return null;
@@ -420,7 +420,7 @@ class Checkers {
 
         cup.next({ id: state.sx });
         cup.event('newround', true);
-        cup.setTimelimit(30);
+        cup.setTimelimit(30000);
     }
 
     findNextPlayer() {
