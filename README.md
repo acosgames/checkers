@@ -1,5 +1,5 @@
-# tictactoe
-Classic game of X and O on a 9 square grid
+# Checkers
+Classic game of checkers
 
 [View Acos Documentation](https://docs.acos.games)
 
