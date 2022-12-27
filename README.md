@@ -1,5 +1,7 @@
-# tictactoe
-Classic game of X and O on a 9 square grid
+# Checkers
+Classic game of checkers
+
+[Play on ACOS.games](https://acos.games/g/checkers)
 
 [View Acos Documentation](https://docs.acos.games)
 
@@ -21,9 +23,12 @@ npm start
 
 ### Playing the game
 
-1. Open 2 tabs at [http://localhost:3200/](http://localhost:3200/)
-2. Enter a username on each tab and click 'Join'
-3. When ready, press "Start Game"
+1. Tab will open automatically at [http://localhost:3200/](http://localhost:3200/)
+2. Enter a username and click 'Join'
+3. Click "Add Fake Player" 
+4. Click "Reset game"
+5. Click "Join" for players you want to play
+6. Click "Start Game"
 
 The game was designed to play in Scaled Resolution mode, 4:4 resolution, 1200 width.
 
