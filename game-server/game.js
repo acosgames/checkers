@@ -123,7 +123,7 @@ class Checkers {
             return true;
         }
 
-        cup.setTimelimit(3000);
+        cup.setTimelimit(30);
         // this.selectNextPlayer(action.user.id);
         // cup.event('move', {
         //     id, from, dir
@@ -420,7 +420,7 @@ class Checkers {
 
         cup.next({ id: state.sx });
         cup.event('newround', true);
-        cup.setTimelimit(30000);
+        cup.setTimelimit(30);
     }
 
     findNextPlayer() {

@@ -360,7 +360,7 @@ class Checkers {
             return true;
         }
 
-        _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].setTimelimit(3000);
+        _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].setTimelimit(30);
         // this.selectNextPlayer(action.user.id);
         // cup.event('move', {
         //     id, from, dir
@@ -657,7 +657,7 @@ class Checkers {
 
         _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].next({ id: state.sx });
         _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].event('newround', true);
-        _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].setTimelimit(30000);
+        _acosg__WEBPACK_IMPORTED_MODULE_0__["default"].setTimelimit(30);
     }
 
     findNextPlayer() {
