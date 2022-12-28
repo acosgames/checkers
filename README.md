@@ -32,6 +32,15 @@ npm start
 
 The game was designed to play in Scaled Resolution mode, 4:4 resolution, 1200 width.
 
+## VSCode Debugging, add to launch.json
+```json
+{
+    "command": "npm start",
+    "name": "Launch Checkers",
+    "request": "launch",
+    "type": "node-terminal"
+},
+```
 
 ## About Client
 
