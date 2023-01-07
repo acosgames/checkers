@@ -21,6 +21,10 @@ export function GameLoader(props) {
         if (cb)
             cb();
 
+        if (timerHandle) {
+            clearTimeout(timerHandle);
+        }
+
         timerHandle = setTimeout(() => { timerLoop(cb) }, 100);
 
 
@@ -109,6 +113,10 @@ export function GameLoader(props) {
 
         if (message && message?.events?.gameover) {
             needsReset = true;
+        }
+
+        if (message?.room?.status == 'pregame') {
+            timerLoop();
         }
 
     }

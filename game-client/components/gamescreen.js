@@ -1,5 +1,5 @@
 
-import React, { Component, useEffect } from 'react';
+import React, { Component, useEffect, useRef } from 'react';
 import fs from 'flatstore';
 import Cell from './Cell';
 import Timebar from './timebar';
@@ -16,7 +16,7 @@ function findOtherPlayer(localId) {
 }
 
 function Timeleft(props) {
-    let timeleft = props.timeleft;
+    let [timeleft] = fs.useWatch('timeleft');
     try {
         if (typeof timeleft != 'number')
             timeleft = Number.parseInt(timeleft);
@@ -28,14 +28,13 @@ function Timeleft(props) {
     }
     return (<>{timeleft}</>)
 }
-Timeleft = fs.connect(['timeleft'])(Timeleft);
 
 function TopPlayer(props) {
-    let local = fs.get('local');
-    let next = fs.get('next');
-    let events = fs.get('events');
+    let [next] = fs.useWatch('next');
+    let [events] = fs.useWatch('events');
     let gameover = events?.gameover;
 
+    let local = fs.get('local');
 
     let other = findOtherPlayer(local.id);
     let player = other?.player;
@@ -68,15 +67,12 @@ function TopPlayer(props) {
         </div>
     )
 }
-TopPlayer = fs.connect(['next', 'events-gameover'])(TopPlayer);
 
 
 function BottomPlayer(props) {
-
     let local = fs.get('local');
-    let next = fs.get('next');
-
-    let events = fs.get('events');
+    let [next] = fs.useWatch('next');
+    let [events] = fs.useWatch('events');
     let gameover = events?.gameover;
     let isWinner = gameover?.id == local.id;
 
@@ -104,13 +100,13 @@ function BottomPlayer(props) {
         </div>
     )
 }
-BottomPlayer = fs.connect(['next', 'events-gameover'])(BottomPlayer);
 
 
 function IsChainUpdate(props) {
+    let [next] = fs.useWatch('next');
+
     useEffect(() => {
         let local = fs.get('local');
-        let next = fs.get('next');
         if (next.id != local.id)
             return;
         fs.set('highlight', []);
@@ -118,30 +114,28 @@ function IsChainUpdate(props) {
     })
     return <></>
 }
-IsChainUpdate = fs.connect(['next-pos'])(IsChainUpdate);
+IsChainUpdate = IsChainUpdate;
 
 
-class Gamescreen extends Component {
-    constructor(props) {
-        super(props);
-        this.ref = null;
-    }
+function Gamescreen(props) {
 
+    let ref = useRef();
 
+    let [local] = fs.useWatch('local');
 
-    updatePosition() {
-        if (!this.ref)
+    const updatePosition = () => {
+        if (!ref)
             return;
 
-        let rect = JSON.stringify(this.ref.getBoundingClientRect());
+        let rect = JSON.stringify(ref.current.getBoundingClientRect());
         rect = JSON.parse(rect);
-        rect.offsetWidth = this.ref.offsetWidth;
-        rect.offsetHeight = this.ref.offsetHeight;
+        rect.offsetWidth = ref.current.offsetWidth;
+        rect.offsetHeight = ref.current.offsetHeight;
 
         fs.set('gamearea', rect);
     }
 
-    renderCheckerGrid() {
+    const renderCheckerGrid = () => {
         let elems = [];
         for (var x = 0; x < 8; x++) {
             for (var y = 0; y < 8; y++) {
@@ -151,31 +145,28 @@ class Gamescreen extends Component {
         return elems;
     }
 
-    render() {
+    useEffect(() => {
+        setTimeout(updatePosition, 2000);
+    }, [])
 
-        let local = fs.get('local');
-        let shouldRotate = local.type == 'W';
-        let classRotate = shouldRotate ? 'shouldRotate' : '';
-        return (
-            <div className="gamewrapper" ref={el => {
-                if (!el) return;
-                this.ref = el;
-                setTimeout(this.updatePosition.bind(this), 2000);
-            }}>
-                <IsChainUpdate />
-                <div className="vstack">
-                    <TopPlayer />
-                    <div className="gamescreen" >
-                        <div className={"checkers-grid " + classRotate}>
-                            {this.renderCheckerGrid()}
-                        </div>
+    let shouldRotate = local.type == 'W';
+    let classRotate = shouldRotate ? 'shouldRotate' : '';
+    return (
+        <div className="gamewrapper" ref={ref}>
+            <IsChainUpdate />
+            <div className="vstack">
+                <TopPlayer />
+                <div className="gamescreen" >
+                    <div className={"checkers-grid " + classRotate}>
+                        {renderCheckerGrid()}
                     </div>
-                    <BottomPlayer />
                 </div>
+                <BottomPlayer />
             </div>
-        )
-    }
+        </div>
+    )
+
 
 }
 
-export default fs.connect(['local'])(Gamescreen);
+export default Gamescreen;

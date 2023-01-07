@@ -8,12 +8,19 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
 }
 
+fs.set('highlight', []);
 
 function Cell(props) {
 
+    // 'state-board', 'selected', 'highlight'
+    let [state] = fs.useWatch('state');
+    let [selected] = fs.useWatch('selected');
+    let [highlighted] = fs.useWatch('highlight');
+
+
     const x = props.x;
     const y = props.y;
-    const state = fs.get('state');
+    // const state = fs.get('state');
     let board = state?.board;
     let cell = 0;
     if (board) {
@@ -234,11 +241,11 @@ function Cell(props) {
     else
         squareType = (x % 2) ? 'odd' : 'even';
 
-    let selectedX = props?.selected?.x;
-    let selectedY = props?.selected?.y;
+    let selectedX = selected?.x;
+    let selectedY = selected?.y;
     let isSelected = (selectedX == x && selectedY == y);
 
-    let highlighted = fs.get('highlight') || [];
+    // let highlighted = fs.get('highlight') || [];
     let isHighlighted = false;
     for (var i = 0; i < highlighted.length; i++) {
         let h = highlighted[i];
@@ -325,4 +332,4 @@ function Cell(props) {
 }
 
 
-export default fs.connect(['state-board', 'selected', 'highlight'])(Cell);
+export default Cell;
