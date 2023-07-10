@@ -3,7 +3,7 @@ Classic game of checkers
 
 [Play on ACOS.games](https://acos.games/g/checkers)
 
-[View Acos Documentation](https://docs.acos.games)
+[View Acos Documentation](https://sdk.acos.games)
 
 --- 
 
