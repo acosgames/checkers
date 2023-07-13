@@ -11,6 +11,17 @@
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
+const globals = {
+    log,
+    error,
+    finish,
+    random,
+    game,
+    actions,
+    killGame,
+    database,
+    ignore
+}
 
 class ACOSG {
     constructor() {
